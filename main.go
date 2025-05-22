@@ -10,8 +10,22 @@ import (
 
 func main() {
 	http.HandleFunc("/", welcome)
-	http.HandleFunc("/cards", draw)
+	http.HandleFunc("/start", start)
+	http.HandleFunc("/cards", withCORS(draw))
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func withCORS(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		fn(w, r)
+	}
 }
 
 func draw(writer http.ResponseWriter, request *http.Request) {
@@ -25,4 +39,14 @@ func draw(writer http.ResponseWriter, request *http.Request) {
 
 func welcome(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, "Welcome to the tech tarot backend!")
+}
+
+func start(writer http.ResponseWriter, request *http.Request) {
+	/* ToDo: refactor early return */
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Only Post method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	/* ToDo:send start to frontend */
+	fmt.Fprint(writer, "Tech Tarot started")
 }
