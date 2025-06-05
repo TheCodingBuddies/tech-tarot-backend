@@ -1,16 +1,23 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"tech-tarot-backend/cardstack"
 	"tech-tarot-backend/server"
 )
 
 func main() {
+	ctx := context.Background()
+	sse := server.NewSSEServer(ctx)
+	sse.Start()
+
 	http.HandleFunc("/", welcome)
-	http.HandleFunc("/start", start)
+	http.HandleFunc("/connect", sse.Connect)
+	http.HandleFunc("/start", sse.StartGame)
 	http.HandleFunc("/cards", withCORS(draw))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -34,19 +41,9 @@ func draw(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(writer).Encode(server.NewStack().Draw3())
+	json.NewEncoder(writer).Encode(cardstack.NewStack().Draw3())
 }
 
 func welcome(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, "Welcome to the tech tarot backend!")
-}
-
-func start(writer http.ResponseWriter, request *http.Request) {
-	/* ToDo: refactor early return */
-	if request.Method != http.MethodPost {
-		http.Error(writer, "Only Post method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	/* ToDo:send start to frontend */
-	fmt.Fprint(writer, "Tech Tarot started")
 }

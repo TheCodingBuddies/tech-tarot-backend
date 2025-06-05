@@ -1,4 +1,4 @@
-package server
+package cardstack
 
 import "testing"
 
