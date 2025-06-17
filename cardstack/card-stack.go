@@ -19,9 +19,11 @@ func (stack *Stack) Draw3() []Card {
 }
 
 func (stack *Stack) shuffle() {
-	rand.Shuffle(len(stack.cards), func(i, j int) {
-		stack.cards[i], stack.cards[j] = stack.cards[j], stack.cards[i]
-	})
+	// very important information: fisher-yates algo
+	for i := len(stack.cards) - 1; i > 0; i-- {
+		randPos := rand.Intn(i + 1)
+		stack.cards[i], stack.cards[randPos] = stack.cards[randPos], stack.cards[i]
+	}
 }
 
 func NewStack() *Stack {

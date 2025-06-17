@@ -74,6 +74,9 @@ func (sseServer *EventServer) Connect(writer http.ResponseWriter, request *http.
 		return
 	}
 
+	ctx, cancel := context.WithCancel(request.Context())
+	defer cancel()
+
 	message := make(chan []byte)
 	sseServer.ConnectClient <- message
 
@@ -99,6 +102,9 @@ func (sseServer *EventServer) Connect(writer http.ResponseWriter, request *http.
 				return
 			}
 			flusher.Flush()
+		case <-ctx.Done():
+			sseServer.CloseClient <- message
+			return
 		}
 	}
 }
