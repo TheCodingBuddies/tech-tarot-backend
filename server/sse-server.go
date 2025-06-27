@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 )
@@ -62,65 +61,14 @@ func (sseServer *EventServer) run() {
 	}
 }
 
-func (sseServer *EventServer) Connect(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Set("Content-Type", "text/event-stream")
-	writer.Header().Set("Cache-Control", "no-cache")
-	writer.Header().Set("Connection", "keep-alive")
-	writer.Header().Set("X-Accel-Buffering", "no")
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-	flusher, ok := writer.(http.Flusher)
-	if !ok {
-		http.Error(writer, "Streaming unsupported", http.StatusInternalServerError)
-		return
-	}
-
-	ctx, cancel := context.WithCancel(request.Context())
-	defer cancel()
-
-	message := make(chan []byte)
-	sseServer.ConnectClient <- message
-
-	keepAliveTicker := time.NewTicker(10 * time.Second)
-
-	for {
+func (sseServer *EventServer) Broadcast(message string) {
+	broadcastMessage := fmt.Sprintf("%s\n\n", message)
+	for c := range sseServer.clients {
 		select {
-		case msg, ok := <-message:
-			log.Printf("message to broadcast: %v\n", string(msg))
-			if !ok {
-				return
-			}
-			_, err := fmt.Fprintf(writer, "data: %s\n\n", msg)
-			if err != nil {
-				log.Printf("error writing message: %v", err)
-				return
-			}
-			flusher.Flush()
-		case <-keepAliveTicker.C:
-			_, err := fmt.Fprintf(writer, "data: keepalive\n\n")
-			if err != nil {
-				log.Printf("error writing keep alive message: %v\n", err)
-				return
-			}
-			flusher.Flush()
-		case <-ctx.Done():
-			sseServer.CloseClient <- message
-			return
+		case c <- []byte(broadcastMessage):
+		case <-time.After(1 * time.Second):
+			log.Printf("Broadcast timeout for client: %v", c)
 		}
 	}
-}
 
-func (sseServer *EventServer) StartGame(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "Only Post method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	sseServer.broadcast("start-game")
-	fmt.Fprint(writer, "Tech Tarot started")
-}
-
-func (sseServer *EventServer) broadcast(message string) {
-	for c := range sseServer.clients {
-		broadcastMessage := fmt.Sprintf("%s\n\n", message)
-		c <- []byte(broadcastMessage)
-	}
 }

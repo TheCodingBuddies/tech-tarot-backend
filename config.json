@@ -1,0 +1,4 @@
+{
+  "CardStackPath": "assets/cardstack.json",
+  "HTTPServerPort": 8080
+}
