@@ -1,0 +1,19 @@
+{
+  "stack": [
+    {
+      "id": "1",
+      "name": "cardA",
+      "image_src": "/assets/images/testA.png"
+    },
+    {
+      "id": "2",
+      "name": "cardB",
+      "image_src": "/assets/images/testB.png"
+    },
+    {
+      "id": "3",
+      "name": "cardC",
+      "image_src": "/assets/images/testC.png"
+    }
+  ]
+}
