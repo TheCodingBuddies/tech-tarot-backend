@@ -2,12 +2,17 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"tech-tarot-backend/server"
 	"time"
 )
+
+type UserData struct {
+	Name string `json:"user"`
+}
 
 type SSEController struct {
 	sseServer *server.EventServer
@@ -76,6 +81,12 @@ func (controller *SSEController) startGame(writer http.ResponseWriter, request *
 		http.Error(writer, "Only Post method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	controller.sseServer.Broadcast("start-game")
+	userData := UserData{}
+	err := json.NewDecoder(request.Body).Decode(&userData)
+	if err != nil {
+		http.Error(writer, "Invalid user data", http.StatusBadRequest)
+		return
+	}
+	controller.sseServer.Broadcast(userData.Name)
 	fmt.Fprint(writer, "Tech Tarot started")
 }
